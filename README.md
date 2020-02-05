@@ -3,8 +3,8 @@ Account checker for netzclub.net accounts.
 Displays current used traffic and traffic available without the need to install an app or use the official website.
 
 ### Installation
-1. Install [Python](https://gist.github.com/farOverNinethousand/2efc03be38c9932a338f1336fbef7977#python-installieren-windows)
-2. Install the following pip modules using [THIS guide](https://gist.github.com/farOverNinethousand/2efc03be38c9932a338f1336fbef7977#python-module-installieren-windows):  
+1. Install Python using [this tutorial](https://gist.github.com/farOverNinethousand/2efc03be38c9932a338f1336fbef7977#python-installieren-windows)
+2. Install the following pip modules using [this tutorial](https://gist.github.com/farOverNinethousand/2efc03be38c9932a338f1336fbef7977#python-module-installieren-windows):  
 `` requests ``
 3. Download and unzip this project.
 
