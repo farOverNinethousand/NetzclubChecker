@@ -4,10 +4,9 @@ Displays current used traffic and traffic available without the need to install 
 
 ### Installation
 1. Install [Python](https://gist.github.com/farOverNinethousand/2efc03be38c9932a338f1336fbef7977#python-installieren-windows)
-2. Install the following pip modules using [THIS guide](https://gist.github.com/farOverNinethousand/2efc03be38c9932a338f1336fbef7977#python-module-installieren-windows):
-3. Install the following Python modules via CMD [start CMD as admin] (pip install <modulname>):  
+2. Install the following pip modules using [THIS guide](https://gist.github.com/farOverNinethousand/2efc03be38c9932a338f1336fbef7977#python-module-installieren-windows):  
 `` requests ``
-4. Download and unzip this project.
+3. Download and unzip this project.
 
 ### Usage
 Run Checker.py and follow displayed instructions.
