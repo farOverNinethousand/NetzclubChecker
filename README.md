@@ -3,21 +3,17 @@ Account checker for netzclub.net accounts.
 Displays current used traffic and traffic available without the need to install an app or use the official website.
 
 ### Installation
-1. Install Python 3.8 or higher: https://www.python.org/downloads/
-2. Ensure that pip is installed by running the commandline **as admin** and typing in:
-``python -m ensurepip``
-3. Install the following Python modules via CMD [start CMD as admin] (pip install <modulname>):
+1. Install [Python](https://gist.github.com/farOverNinethousand/2efc03be38c9932a338f1336fbef7977#python-installieren-windows)
+2. Install the following pip modules using [THIS guide](https://gist.github.com/farOverNinethousand/2efc03be38c9932a338f1336fbef7977#python-module-installieren-windows):
+3. Install the following Python modules via CMD [start CMD as admin] (pip install <modulname>):  
 `` requests ``
-Siehe auch:
-https://riptutorial.com/de/python/example/15322/installation-externer-module-mit-pip
-4. Download- and unzip this project.
+4. Download and unzip this project.
 
 ### Usage
 Run Checker.py and follow displayed instructions.
 You do not necessarily have to enter your [netzclub.net](https://www.netzclub.net/login/) password but it is recommended. 
 On the first run you will receive a confirmation SMS.
-Be sure to run this script 2-3 times every day to make sure your account stays active.
-
+Be sure to run this script 2-3 times every day to make sure your account stays active.  
 If everything works as expected, you should get an output like this:
 ```
 ***************************************************************************
@@ -30,19 +26,15 @@ If everything works as expected, you should get an output like this:
 ```
 
 ### FAQ
-**Can I use this script and the [netzclub+ app](https://play.google.com/store/apps/details?id=net.netzclub.plus) at the same time?**
-
+**Can I use this script and the [netzclub+ app](https://play.google.com/store/apps/details?id=net.netzclub.plus) at the same time?**  
 No. If you use this script you will be automatically logged out in the netzclub+ app and the other way around.
 You will then have to re-enter that confirmation SMS.
 
-**Can I use this script and the [normal netzclub app](https://play.google.com/store/apps/details?id=com.telefonica.netzclub.csc) at the same time?**
-
+**Can I use this script and the [normal netzclub app](https://play.google.com/store/apps/details?id=com.telefonica.netzclub.csc) at the same time?**  
 Yes.
 
-**Will my account get banned if I use this script?**
-
+**Will my account get banned if I use this script?**  
 No gurantees but I don't see any reason why this should happen at this moment.
 
-**Can I use this script with multiple netzclub accounts?**
-
+**Can I use this script with multiple netzclub accounts?**  
 Not in a comfortable way but you can copy it multiple times and add different accounts for each copy ;)
