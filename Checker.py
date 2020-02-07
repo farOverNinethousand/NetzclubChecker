@@ -6,7 +6,7 @@ import requests
 import os
 
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
-SETTINGS_PATH = "./settings.json"
+SETTINGS_PATH = "settings.json"
 SETTINGS_PATH_ABS = os.path.join(DIR_PATH, SETTINGS_PATH)
 
 def saveSettings(settingsDict):
