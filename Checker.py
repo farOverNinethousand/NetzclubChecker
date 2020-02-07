@@ -16,10 +16,9 @@ def saveSettings(settingsDict):
 def loadSettings():
     settings = None
     try:
-        settingsFile = open(SETTINGS_PATH_ABS, 'r')
-        settingsJson = settingsFile.read()
-        settingsFile.close
-        settings = json.loads(settingsJson)
+        with open(SETTINGS_PATH_ABS, 'r') as settingsFile:
+            settingsJson = settingsFile.read()
+            settings = json.loads(settingsJson)
     except:
         print('Failed to load ' + SETTINGS_PATH_ABS)
         settings = {}
