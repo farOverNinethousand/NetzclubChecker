@@ -4,22 +4,24 @@ import time
 from datetime import datetime, date
 import requests
 
+DIR_PATH = os.path.dirname(os.path.realpath(__file__))
+SETTINGS_PATH = "./settings.json"
+SETTINGS_PATH_ABS = os.path.join(DIR_PATH, SETTINGS_PATH)
 
 def saveSettings(settingsDict):
-    with open(path_settings, 'w') as outfile:
+    with open(SETTINGS_PATH_ABS, 'w') as outfile:
         json.dump(settingsDict, outfile)
     return
 
 def loadSettings():
     settings = None
-    path_settings = 'settings.json'
     try:
-        settingsFile = open(path_settings, 'r')
+        settingsFile = open(SETTINGS_PATH_ABS, 'r')
         settingsJson = settingsFile.read()
         settingsFile.close
         settings = json.loads(settingsJson)
     except:
-        print('Failed to load ' + path_settings)
+        print('Failed to load ' + SETTINGS_PATH_ABS)
         settings = {}
     return settings
 
@@ -45,7 +47,6 @@ def userInputNumber():
 
 ####################################################################################################
 VERSION = '0.1.3'
-path_settings = 'settings.json'
 print('Welcome to NetzclubChecker %s' % VERSION)
 settings = loadSettings()
 
@@ -358,4 +359,3 @@ close_seconds = 20
 print('Closing in %d seconds' % close_seconds)
 time.sleep(close_seconds)
 
-sys.exit()
