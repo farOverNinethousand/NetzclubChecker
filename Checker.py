@@ -44,7 +44,7 @@ def userInputNumber():
         return input_str
 
 ####################################################################################################
-VERSION = '0.1.2'
+VERSION = '0.1.3'
 path_settings = 'settings.json'
 print('Welcome to NetzclubChecker %s' % VERSION)
 settings = loadSettings()
@@ -168,8 +168,8 @@ while login_counter1 <= 2:
         if session_id is None or userid is None:
             print(prefix_logging_netzclub_plus + 'Login failed --> Did you enter a wrong SMS code?')
             if not info.get('existing_user', True):
-                # 2020-02-07: This seems to be a rare serverside bug where even via official 'netzclub+' app, login will not work although SMS will be sent and user did enter result obviously.
-                print('Seems like either your number is not a netzclub number or there is a bug in the netzclub system --> Check if you can login via netzclub+ app')
+                # 2020-02-07: This may happen for users who have never ever used the netzclub+ app. A step might be missing in the script. This will be fixed in a future version.
+                print('First time user? Try to login via netzclub+ app one time, then run this script again')
             sys.exit()
         # Save logindata as user entered correct information
         saveSettings(settings)
