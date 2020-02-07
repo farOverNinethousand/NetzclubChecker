@@ -37,3 +37,6 @@ No gurantees but I don't see any reason why this should happen at this moment.
 
 **Can I use this script with multiple netzclub accounts?**  
 Not in a comfortable way but you can copy it multiple times and add different accounts for each copy ;)
+
+**How can I reset this script?**
+Close the script and delete the file 'settings.json'. Please keep in mind that you will get another Login-SMS on the first run then!

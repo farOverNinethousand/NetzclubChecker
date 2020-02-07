@@ -44,7 +44,7 @@ def userInputNumber():
         return input_str
 
 ####################################################################################################
-VERSION = '0.1.1'
+VERSION = '0.1.2'
 path_settings = 'settings.json'
 print('Welcome to NetzclubChecker %s' % VERSION)
 settings = loadSettings()
@@ -94,15 +94,12 @@ if phone_number is None or password is None:
     password = input()
     settings['phone_number'] = phone_number
     settings['password'] = password
-    # Store data so no matter what happens we will have them the next time
-    saveSettings(settings)
-    print('NOTE: If you accidently added wrong information, delete the file %s and re-run the script to correct your mistake!' % path_settings)
-    print('Press ENTER to start')
+    print('Thanks :) Now press ENTER to start')
     input()
 print('Checking account %s' % phone_number)
 
-prefix_logging_netzclub_plus = '[netzclub+]'
-print(prefix_logging_netzclub_plus + ' Checking netzclub+ account')
+prefix_logging_netzclub_plus = '[netzclub+] '
+print(prefix_logging_netzclub_plus + 'Checking netzclub+ account')
 
 timestamp = datetime.now().strftime("%Y-%m-%dT%H:%M:%S+0200")
 
@@ -137,7 +134,7 @@ while login_counter1 <= 2:
         result = info.get('result', False)
         guid = info.get('guid', None)
         if result is None or guid is None:
-            print(prefix_logging_netzclub_plus + 'Fatal Login failure! Logindata wrong?')
+            print(prefix_logging_netzclub_plus + 'Fatal Login failure! Did you enter a wrong phone number?')
             sys.exit()
         print(prefix_logging_netzclub_plus + 'Login step 2/2')
         expected_numberof_digits = 4
@@ -169,8 +166,13 @@ while login_counter1 <= 2:
         session_id = info.get('session', None)
         userid = info.get('user_id', None)
         if session_id is None or userid is None:
-            print(prefix_logging_netzclub_plus + 'Login failed --> Did you enter a wrong number or a wrong SMS code?')
+            print(prefix_logging_netzclub_plus + 'Login failed --> Did you enter a wrong SMS code?')
+            if not info.get('existing_user', True):
+                # 2020-02-07: This seems to be a rare serverside bug where even via official 'netzclub+' app, login will not work although SMS will be sent and user did enter result obviously.
+                print('Seems like either your number is not a netzclub number or there is a bug in the netzclub system --> Check if you can login via netzclub+ app')
             sys.exit()
+        # Save logindata as user entered correct information
+        saveSettings(settings)
         print(prefix_logging_netzclub_plus + 'Successfully logged in :)')
         print(prefix_logging_netzclub_plus + 'New sessionid: %s' % session_id)
         # Update this to save it later
@@ -179,7 +181,7 @@ while login_counter1 <= 2:
         # Save users' logindata as it is valid
         saveSettings(settings)
         full_login_done = True
-    print(prefix_logging_netzclub_plus + ' Getting cycle information ...')
+    print(prefix_logging_netzclub_plus + 'Getting cycle information ...')
     get_vars = {
         'hash': session_id,
         'userid': userid,
@@ -194,16 +196,17 @@ while login_counter1 <= 2:
     settings['last_GetCollectingInfo'] = info
     result = info.get('result', False)
     if not result:
+        # Have we already fully logged in before? Then we don't need to do this again --> something went seriously wrong here!
         if full_login_done:
             # This should never happen
             print('Unknown login failure')
             sys.exit()
-        print(prefix_logging_netzclub_plus + ' Failure: Maybe old session?')
+        print(prefix_logging_netzclub_plus + 'Failure: Maybe old session?')
         continue
     else:
         break
 ####################################################################################################
-print(prefix_logging_netzclub_plus + ' Getting GetGeneralConfig ...')
+print(prefix_logging_netzclub_plus + 'Getting GetGeneralConfig ...')
 get_vars = {
     'hash': session_id,
     'userid': userid,
@@ -220,7 +223,7 @@ info = response.json()
 settings['last_GetGeneralConfig'] = info
 ####################################################################################################
 # This is what happens when the user unlocks his smartphone:
-print(prefix_logging_netzclub_plus + ' Swiping unlock ...')
+print(prefix_logging_netzclub_plus + 'Swiping unlock ...')
 get_vars = {
     'userid': userid,
     'hash': session_id,
@@ -253,17 +256,17 @@ traffic_unit2 = None
 cycleEndDate = None
 login_counter2 = 0
 netzclub_login2_successful = False
-prefix_logging_netzclub = '[netzclub]'
-print(prefix_logging_netzclub + ' Checking normal netzclub account')
+prefix_logging_netzclub = '[netzclub] '
+print(prefix_logging_netzclub + 'Checking normal netzclub account')
 if password is None:
-    print(prefix_logging_netzclub + ' Cannot get additional data as password is not given')
+    print(prefix_logging_netzclub + 'Cannot get additional data as password is not given')
 else:
     full_login_done = False
     while login_counter2 <= 2:
         login_counter2 += 1
         if user_id2 is None or session_id2 is None or account_id is None or subscription_id is None or login_counter2 > 1:
             # 2020-02-02: Seems like their API is more stable than their website - it did still work while website login was impossible because of 504 gateway timeout: https://www.netzclub.net/selfcare/
-            print(prefix_logging_netzclub + ' Performing full netzclub login')
+            print(prefix_logging_netzclub + 'Performing full netzclub login')
             response = requests.post(
                 api_base2 + '/auth/login',
                 json={'username': phone_number, 'password': password},
@@ -276,9 +279,9 @@ else:
             session_id2 = info.get('accessToken', None)
             subscription_id = info.get('subscriptionId', None)
             if account_id is None or user_id2 is None or session_id2 is None or subscription_id is None:
-                print(prefix_logging_netzclub + ' Unable to login --> Continuing execution but I won\'t be able to display all information of your account :(')
+                print(prefix_logging_netzclub + 'Unable to login --> Continuing execution but I won\'t be able to display all information of your account :(')
                 break
-            print(prefix_logging_netzclub + ' Login successful :)')
+            print(prefix_logging_netzclub + 'Login successful :)')
             settings['account_id'] = account_id
             settings['user_id2'] = user_id2
             settings['session_id2'] = session_id2
@@ -294,7 +297,7 @@ else:
         # )
         # info = response.json()
         # settings['last_get_balance'] = info
-        print(prefix_logging_netzclub + ' Obtaining traffic data ...')
+        print(prefix_logging_netzclub + 'Obtaining traffic data ...')
         # 2020-02-02: Website/API is slow so this request will sometimes end up in a timeout
         try:
             response = requests.get(
@@ -302,7 +305,7 @@ else:
                 headers=headers2
             )
         except:
-            print(prefix_logging_netzclub + ' Failed to get traffic data ... try again next time')
+            print(prefix_logging_netzclub + 'Failed to get traffic data ... try again next time')
             break
         info = response.json()
         settings['last_get-counter'] = info
@@ -312,7 +315,7 @@ else:
                 # This should never happen
                 print('Unknown login failure')
                 break
-            print(prefix_logging_netzclub + ' Possibly bad session --> Full login required')
+            print(prefix_logging_netzclub + 'Possibly bad session --> Full login required')
             continue
         traffic_info_netzclub = info['counter'][0]
         trafficmax_mb = traffic_info_netzclub['total']
@@ -344,12 +347,12 @@ date_when_more_traffic = datetime.fromtimestamp(future_timestamp).strftime("%d.%
 print('***************************************************************************')
 # TODO: Maybe make the dates nicer --> German
 if trafficmax_mb > -1 and trafficleft_mb > -1 and traffic_unit2 is not None:
-    print(prefix_logging_netzclub + ' Traffic left: %d%s/%d%s' % (trafficleft_mb, traffic_unit2, trafficmax_mb, traffic_unit2))
-print(prefix_logging_netzclub_plus + ' Your extra traffic now: %d%s' % (howmuch_extra_traffic_now, traffic_unit1))
-print(prefix_logging_netzclub_plus + ' You will get %d%s extra traffic in %d days on the %s' % (
+    print(prefix_logging_netzclub + 'Traffic left: %d%s/%d%s' % (trafficleft_mb, traffic_unit2, trafficmax_mb, traffic_unit2))
+print(prefix_logging_netzclub_plus + 'Your extra traffic now: %d%s' % (howmuch_extra_traffic_now, traffic_unit1))
+print(prefix_logging_netzclub_plus + 'You will get %d%s extra traffic in %d days on the %s' % (
     howmuch_extra_traffic_then, traffic_unit1, days_until_more_traffic, date_when_more_traffic))
-print(prefix_logging_netzclub_plus + ' Last time extra traffic: %s' % last_time_extra_traffic)
-print(prefix_logging_netzclub_plus + ' Last time active: %s' % last_time_active)
+print(prefix_logging_netzclub_plus + 'Last time extra traffic: %s' % last_time_extra_traffic)
+print(prefix_logging_netzclub_plus + 'Last time active: %s' % last_time_active)
 print('***************************************************************************')
 close_seconds = 20
 print('Closing in %d seconds' % close_seconds)
