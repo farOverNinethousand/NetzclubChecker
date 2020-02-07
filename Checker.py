@@ -3,6 +3,7 @@ import sys
 import time
 from datetime import datetime, date
 import requests
+import os
 
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 SETTINGS_PATH = "./settings.json"
