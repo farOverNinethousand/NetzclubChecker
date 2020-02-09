@@ -9,10 +9,12 @@ DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 SETTINGS_PATH = "settings.json"
 SETTINGS_PATH_ABS = os.path.join(DIR_PATH, SETTINGS_PATH)
 
+
 def saveSettings(settingsDict):
     with open(SETTINGS_PATH_ABS, 'w') as outfile:
         json.dump(settingsDict, outfile)
     return
+
 
 def loadSettings():
     settings = None
@@ -24,6 +26,7 @@ def loadSettings():
         print('Failed to load ' + SETTINGS_PATH_ABS)
         settings = {}
     return settings
+
 
 # Returns user input with defined number of digits
 def userInputDefinedLengthNumber(numberof_digits):
@@ -37,6 +40,7 @@ def userInputDefinedLengthNumber(numberof_digits):
             continue
         return int(input_str)
 
+
 def userInputNumber():
     while True:
         input_str = input()
@@ -45,8 +49,9 @@ def userInputNumber():
             continue
         return input_str
 
+
 ####################################################################################################
-VERSION = '0.1.3'
+VERSION = '0.1.4'
 print('Welcome to NetzclubChecker %s' % VERSION)
 settings = loadSettings()
 
@@ -75,9 +80,9 @@ headers = {'User-Agent': 'Dalvik/2.1.0 (Linux; %s; %s Build/R16NW)' % (android_v
            'Content-Type': 'application/json',
            'Accept': 'text/plain'
            }
-base_get_data = {'version': version, 'sdk_version': sdk_version, 'android_sdk_version': android_sdk_version}
-smartphone_get_data = {'model': smartphone_model, 'manufacturer': smartphone_manufacturer, 'brand': smartphone_model,
-                       'os': android_version}
+get_data_version = {'version': version, 'sdk_version': sdk_version, 'android_sdk_version': android_sdk_version}
+get_data_smartphone = {'model': smartphone_model, 'manufacturer': smartphone_manufacturer, 'brand': smartphone_model,
+                       'os': android_version, 'mcc': '262', 'mnc': '3', 'locale': 'de'}
 ####################################################################################################
 # Data for 'netzclub' app: https://play.google.com/store/apps/details?id=com.telefonica.netzclub.csc
 api_base2 = 'https://rator.netzclub.net/api/v2'
@@ -104,6 +109,11 @@ print(prefix_logging_netzclub_plus + 'Checking netzclub+ account')
 
 timestamp = datetime.now().strftime("%Y-%m-%dT%H:%M:%S+0200")
 
+# 2020-02-09: Fresh-/First-Login steps are not counted as this would make it too complicated.
+# TODO: Update this to do all steps on fresh login but less steps on re-used session
+maxsteps = 7
+stepcounter = 1
+
 login_counter1 = 0
 full_login_done = False
 while login_counter1 <= 2:
@@ -115,16 +125,10 @@ while login_counter1 <= 2:
             'mobile': phone_number,
             'google_ad_id': '',
             'is_limit_ad_tracking_enabled': 'false',
-            'model': smartphone_model,
-            'manufacturer': smartphone_manufacturer,
-            'brand': smartphone_model,
-            'os': android_version,
-            'mcc': '262',
-            'mnc': '3',
-            'locale': 'de',
             'timestamp': timestamp
         }
-        get_vars.update(base_get_data)
+        get_vars.update(get_data_smartphone)
+        get_vars.update(get_data_version)
         response = requests.get(
             api_base + '/SendVerify',
             params=get_vars,
@@ -147,16 +151,10 @@ while login_counter1 <= 2:
             'code': sms_verification,
             'google_ad_id': '',
             'is_limit_ad_tracking_enabled': 'false',
-            'model': smartphone_model,
-            'manufacturer': smartphone_manufacturer,
-            'brand': smartphone_model,
-            'os': android_version,
-            'mcc': '262',
-            'mnc': '3',
-            'locale': 'de',
             'timestamp': timestamp
         }
-        get_vars.update(base_get_data)
+        get_vars.update(get_data_smartphone)
+        get_vars.update(get_data_version)
         response = requests.get(
             api_base + '/CheckVerificationCode',
             params=get_vars,
@@ -182,7 +180,9 @@ while login_counter1 <= 2:
         # Save users' logindata as it is valid
         saveSettings(settings)
         full_login_done = True
-    print(prefix_logging_netzclub_plus + 'Getting cycle information ...')
+        # After first login we need to do more steps than usually
+        maxsteps = 7
+    print('%sStep %d / %d: GetCollectingInfo ... ' % (prefix_logging_netzclub_plus, stepcounter, maxsteps), end='')
     get_vars = {
         'hash': session_id,
         'userid': userid,
@@ -202,38 +202,115 @@ while login_counter1 <= 2:
             # This should never happen
             print('Unknown login failure')
             sys.exit()
+        print('[FAIL]')
         print(prefix_logging_netzclub_plus + 'Failure: Maybe old session?')
         continue
     else:
+        print('[OK]')
         break
+stepcounter += 1
 ####################################################################################################
-print(prefix_logging_netzclub_plus + 'Getting GetGeneralConfig ...')
-get_vars = {
-    'hash': session_id,
+get_data_plus = {
     'userid': userid,
+    'hash': session_id,
     'wifi': 'true',
     'timestamp': timestamp
 }
-get_vars.update(base_get_data)
+get_data_plus.update(get_data_version)
+####################################################################################################
+print('%sStep %d / %d: GetGeneralConfig ... ' % (prefix_logging_netzclub_plus, stepcounter, maxsteps), end='')
+get_vars = get_data_plus
+try:
+    response = requests.get(
+        api_base + '/GetGeneralConfig',
+        params=get_vars,
+        headers=headers
+    )
+    info = response.json()
+    settings['last_GetGeneralConfig'] = info
+    print('[OK]')
+except:
+    print('[FAIL]')
+stepcounter += 1
+####################################################################################################
+print('%sStep %d / %d: GetUserDetails ... ' % (prefix_logging_netzclub_plus, stepcounter, maxsteps), end='')
+get_vars = get_data_plus
 response = requests.get(
-    api_base + '/GetGeneralConfig',
+    api_base + '/GetUserDetails',
     params=get_vars,
     headers=headers
 )
 info = response.json()
-settings['last_GetGeneralConfig'] = info
+settings['last_GetUserDetails'] = info
+result = info.get('result', False)
+if result:
+    print('[OK]')
+else:
+    print('[FAIL]')
+
+stepcounter += 1
+####################################################################################################
+print('%sStep %d / %d: SetUserDeviceDetails ... ' % (prefix_logging_netzclub_plus, stepcounter, maxsteps), end='')
+get_vars = get_data_plus
+get_vars.update(get_data_smartphone)
+get_vars.update(get_data_version)
+response = requests.get(
+    api_base + '/SetUserDeviceDetails',
+    params=get_vars,
+    headers=headers
+)
+info = response.json()
+settings['last_SetUserDeviceDetails'] = info
+result = info.get('result', False)
+if result:
+    print('[OK]')
+else:
+    print('[FAIL]')
+
+stepcounter += 1
+####################################################################################################
+print('%sStep %d / %d: GetAdWaterfall ... ' % (prefix_logging_netzclub_plus, stepcounter, maxsteps), end='')
+get_vars = get_data_plus
+get_vars.update(get_data_version)
+try:
+    response = requests.get(
+        api_base + '/GetAdWaterfall',
+        params=get_vars,
+        headers=headers
+    )
+    info = response.json()
+    settings['last_GetAdWaterfall'] = info
+    print('[OK]')
+except:
+    print('[FAIL]')
+
+stepcounter += 1
+####################################################################################################
+# # TODO: Check if this is really needed
+# print('%sStep %d / %d: GetPremiumAd ... ' % (prefix_logging_netzclub_plus, stepcounter, maxsteps), end='')
+# get_vars = get_data_plus
+# get_vars.update(get_data_version)
+# try:
+#     response = requests.get(
+#         api_base + '/GetPremiumAd',
+#         params=get_vars,
+#         headers=headers
+#     )
+#     info = response.json()
+#     settings['last_GetPremiumAd'] = info
+#     print('[OK]')
+# except:
+#     print('[FAIL]')
+# stepcounter += 1
 ####################################################################################################
 # This is what happens when the user unlocks his smartphone:
-print(prefix_logging_netzclub_plus + 'Swiping unlock ...')
+print('%sStep %d / %d: UserSwipe ... ' % (prefix_logging_netzclub_plus, stepcounter, maxsteps), end='')
 get_vars = {
-    'userid': userid,
-    'hash': session_id,
-    'wifi': 'true',
-    'timestamp': timestamp,
-    'swipe_tracked': 'false',
+    'swipe_tracked': 'true',
     'jsondata': '%7B%22type%22%3A%22UserClickSwipeAndContent%22%2C%22clicks%22%3A0%2C%22impressions%22%3A1%2C%22screen_on_impressions%22%3A0%2C%22ad_id%22%3A%22%22%2C%22video_position%22%3A-1%7D',
 }
-get_vars.update(base_get_data)
+get_vars.update(get_data_plus)
+get_vars.update(get_data_version)
 response = requests.get(
     api_base + '/UserSwipe',
     # params=get_vars,
@@ -241,14 +318,14 @@ response = requests.get(
 )
 info = response.json()
 settings['last_UserSwipe'] = info
-# TODO: Find out what result means here and why API will often return 'false' at this point
+# TODO: Find out what result means here and why API will often return 'false' at this point. Same via test-android-smartphone!
 result = info.get('result', False)
-if not result:
-    # This should never happen
-    print('Swipe failed(?)')
+if result:
+    print('[OK]')
 else:
-    print('Swipe successful')
+    print('[FAIL]')
 print('***************************************************************************')
+stepcounter += 1
 ####################################################################################################
 # Optional: Get data from other Netzclub app (we only want to get current traffic remaining and max traffic but API returns even more if you want :)
 trafficmax_mb = -1
@@ -280,7 +357,8 @@ else:
             session_id2 = info.get('accessToken', None)
             subscription_id = info.get('subscriptionId', None)
             if account_id is None or user_id2 is None or session_id2 is None or subscription_id is None:
-                print(prefix_logging_netzclub + 'Unable to login --> Continuing execution but I won\'t be able to display all information of your account :(')
+                print(
+                    prefix_logging_netzclub + 'Unable to login --> Continuing execution but I won\'t be able to display all information of your account :(')
                 break
             print(prefix_logging_netzclub + 'Login successful :)')
             settings['account_id'] = account_id
@@ -298,15 +376,16 @@ else:
         # )
         # info = response.json()
         # settings['last_get_balance'] = info
-        print(prefix_logging_netzclub + 'Obtaining traffic data ...')
+        print('%sStep %d / %d: Obtaining traffic used data ... ' % (prefix_logging_netzclub, stepcounter, maxsteps), end='')
         # 2020-02-02: Website/API is slow so this request will sometimes end up in a timeout
         try:
             response = requests.get(
                 api_base2 + '/user/get-counter/' + subscription_id,
                 headers=headers2
             )
+            print('[OK]')
         except:
-            print(prefix_logging_netzclub + 'Failed to get traffic data ... try again next time')
+            print('[FAIL] Failed to get traffic data ... try again next time')
             break
         info = response.json()
         settings['last_get-counter'] = info
@@ -328,6 +407,7 @@ else:
             traffic_unit2 = 'MB'
         netzclub_login2_successful = True
         break
+stepcounter += 1
 ####################################################################################################
 # Save settings
 saveSettings(settings)
@@ -348,14 +428,15 @@ date_when_more_traffic = datetime.fromtimestamp(future_timestamp).strftime("%d.%
 print('***************************************************************************')
 # TODO: Maybe make the dates nicer --> German
 if trafficmax_mb > -1 and trafficleft_mb > -1 and traffic_unit2 is not None:
-    print(prefix_logging_netzclub + 'Traffic left: %d%s/%d%s' % (trafficleft_mb, traffic_unit2, trafficmax_mb, traffic_unit2))
+    print(prefix_logging_netzclub + 'Traffic left: %d%s/%d%s' % (
+    trafficleft_mb, traffic_unit2, trafficmax_mb, traffic_unit2))
 print(prefix_logging_netzclub_plus + 'Your extra traffic now: %d%s' % (howmuch_extra_traffic_now, traffic_unit1))
 print(prefix_logging_netzclub_plus + 'You will get %d%s extra traffic in %d days on the %s' % (
     howmuch_extra_traffic_then, traffic_unit1, days_until_more_traffic, date_when_more_traffic))
 print(prefix_logging_netzclub_plus + 'Last time extra traffic: %s' % last_time_extra_traffic)
+# TODO: Correct this as their server timezone is different from germany
 print(prefix_logging_netzclub_plus + 'Last time active: %s' % last_time_active)
 print('***************************************************************************')
 close_seconds = 20
 print('Closing in %d seconds' % close_seconds)
 time.sleep(close_seconds)
-
