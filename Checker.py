@@ -4,6 +4,7 @@ import time
 from datetime import datetime, date
 import requests
 import os
+from datetime import datetime
 
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 SETTINGS_PATH = "settings.json"
@@ -51,7 +52,7 @@ def userInputNumber():
 
 
 ####################################################################################################
-VERSION = '0.1.4'
+VERSION = '0.1.5'
 print('Welcome to NetzclubChecker %s' % VERSION)
 settings = loadSettings()
 
@@ -73,14 +74,13 @@ api_base = 'https://netzclub.postr.co.nz'
 smartphone_model = 'SM-G960F'
 smartphone_manufacturer = 'Samsung'
 android_version = 'Android 8.0.0'
-version = '23'
-sdk_version = '60'
-android_sdk_version = '26'
+# Required in step 'GetPremiumAd'
+supported_browser_user_agents = 'Mozilla%2F5.0+%28Linux%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Version%2F4.0+Chrome%2F63.0.3239.111+Mobile+Safari%2F537.36'
 headers = {'User-Agent': 'Dalvik/2.1.0 (Linux; %s; %s Build/R16NW)' % (android_version, smartphone_model),
            'Content-Type': 'application/json',
            'Accept': 'text/plain'
            }
-get_data_version = {'version': version, 'sdk_version': sdk_version, 'android_sdk_version': android_sdk_version}
+get_data_version = {'version': '23', 'sdk_version': '60', 'android_sdk_version': '26'}
 get_data_smartphone = {'model': smartphone_model, 'manufacturer': smartphone_manufacturer, 'brand': smartphone_model,
                        'os': android_version, 'mcc': '262', 'mnc': '3', 'locale': 'de'}
 ####################################################################################################
@@ -107,11 +107,11 @@ print('Checking account %s' % phone_number)
 prefix_logging_netzclub_plus = '[netzclub+] '
 print(prefix_logging_netzclub_plus + 'Checking netzclub+ account')
 
-timestamp = datetime.now().strftime("%Y-%m-%dT%H:%M:%S+0200")
+timestamp = datetime.now().strftime("%Y-%m-%dT%H:%M:%S+0100")
 
 # 2020-02-09: Fresh-/First-Login steps are not counted as this would make it too complicated.
 # TODO: Update this to do all steps on fresh login but less steps on re-used session
-maxsteps = 7
+maxsteps = 8
 stepcounter = 1
 
 login_counter1 = 0
@@ -144,17 +144,19 @@ while login_counter1 <= 2:
         print(prefix_logging_netzclub_plus + 'Login step 2/2')
         expected_numberof_digits = 4
         print(prefix_logging_netzclub_plus + 'Enter SMS verification (%d digits):' % expected_numberof_digits)
-        sms_verification = userInputDefinedLengthNumber(expected_numberof_digits)
-        get_vars = {
+        sms_verification_code = userInputDefinedLengthNumber(expected_numberof_digits)
+        get_vars_login = {
             'guid': guid,
             'mobile': phone_number,
-            'code': sms_verification,
             'google_ad_id': '',
             'is_limit_ad_tracking_enabled': 'false',
             'timestamp': timestamp
         }
+        get_vars_login.update(get_data_version)
+
+        get_vars = get_vars_login
+        get_vars['code'] = sms_verification_code
         get_vars.update(get_data_smartphone)
-        get_vars.update(get_data_version)
         response = requests.get(
             api_base + '/CheckVerificationCode',
             params=get_vars,
@@ -164,12 +166,32 @@ while login_counter1 <= 2:
         settings['last_CheckVerificationCode'] = info
         session_id = info.get('session', None)
         userid = info.get('user_id', None)
-        if session_id is None or userid is None:
+        if session_id is None:
             print(prefix_logging_netzclub_plus + 'Login failed --> Did you enter a wrong SMS code?')
-            if not info.get('existing_user', True):
-                # 2020-02-07: This may happen for users who have never ever used the netzclub+ app. A step might be missing in the script. This will be fixed in a future version.
-                print('First time user? Try to login via netzclub+ app one time, then run this script again')
             sys.exit()
+        existing_user = info.get('existing_user', False)
+        if not existing_user:
+            # TODO: Test this, thx to: https://gist.github.com/RomanKarwacik/81ca3b955a7c1e79a14a5b9261ea90ae
+            # This will only happen if the user has never ever used the netzclub app before. We have to do this in order to get 'user_id'.
+            print(
+                prefix_logging_netzclub_plus + 'Login step 3/2: Register: Seems like you are a new user who has never logged in before')
+            postcode = info.get('postcode', '0000')
+            get_vars = get_vars_login
+            get_vars['postcode'] = postcode
+            get_vars['hash'] = session_id
+            response = requests.get(
+                api_base + '/Register',
+                params=get_vars,
+                headers=headers
+            )
+            info = response.json()
+            settings['last_Register'] = info
+            userid = info.get('user_id', None)
+        if userid is None:
+            # This should never happen
+            print('Unknown login failure: Failed to find userid')
+            sys.exit()
+
         # Save logindata as user entered correct information
         saveSettings(settings)
         print(prefix_logging_netzclub_plus + 'Successfully logged in :)')
@@ -286,22 +308,27 @@ except:
 
 stepcounter += 1
 ####################################################################################################
-# # TODO: Check if this is really needed
-# print('%sStep %d / %d: GetPremiumAd ... ' % (prefix_logging_netzclub_plus, stepcounter, maxsteps), end='')
-# get_vars = get_data_plus
-# get_vars.update(get_data_version)
-# try:
-#     response = requests.get(
-#         api_base + '/GetPremiumAd',
-#         params=get_vars,
-#         headers=headers
-#     )
-#     info = response.json()
-#     settings['last_GetPremiumAd'] = info
-#     print('[OK]')
-# except:
-#     print('[FAIL]')
-# stepcounter += 1
+# TODO: Check if this is really needed
+print('%sStep %d / %d: GetPremiumAd ... ' % (prefix_logging_netzclub_plus, stepcounter, maxsteps), end='')
+# Original request:
+#             'ua': supported_browser_user_agents}
+# get_vars = {'source_id': '6', 'realtime': 'false', 'consent_required': 'true', 'consent_string': '<SOME_STRING>', 'google_ad_id': 'a-f0-9{8}-a-f0-9{4}-a-f0-9{4}-a-f0-9{4}-a-f0-9{12}',
+get_vars = {'source_id': '6', 'realtime': 'false', 'consent_required': 'false', 'google_ad_id': '',
+            'ua': supported_browser_user_agents}
+get_vars.update(get_data_plus)
+get_vars.update(get_data_version)
+try:
+    response = requests.get(
+        api_base + '/GetPremiumAd',
+        params=get_vars,
+        headers=headers
+    )
+    info = response.json()
+    settings['last_GetPremiumAd'] = info
+    print('[OK]')
+except:
+    print('[FAIL]')
+stepcounter += 1
 ####################################################################################################
 # This is what happens when the user unlocks his smartphone:
 print('%sStep %d / %d: UserSwipe ... ' % (prefix_logging_netzclub_plus, stepcounter, maxsteps), end='')
@@ -376,7 +403,8 @@ else:
         # )
         # info = response.json()
         # settings['last_get_balance'] = info
-        print('%sStep %d / %d: Obtaining traffic used data ... ' % (prefix_logging_netzclub, stepcounter, maxsteps), end='')
+        print('%sStep %d / %d: Obtaining traffic used data ... ' % (prefix_logging_netzclub, stepcounter, maxsteps),
+              end='')
         # 2020-02-02: Website/API is slow so this request will sometimes end up in a timeout
         try:
             response = requests.get(
@@ -429,7 +457,7 @@ print('*************************************************************************
 # TODO: Maybe make the dates nicer --> German
 if trafficmax_mb > -1 and trafficleft_mb > -1 and traffic_unit2 is not None:
     print(prefix_logging_netzclub + 'Traffic left: %d%s/%d%s' % (
-    trafficleft_mb, traffic_unit2, trafficmax_mb, traffic_unit2))
+        trafficleft_mb, traffic_unit2, trafficmax_mb, traffic_unit2))
 print(prefix_logging_netzclub_plus + 'Your extra traffic now: %d%s' % (howmuch_extra_traffic_now, traffic_unit1))
 print(prefix_logging_netzclub_plus + 'You will get %d%s extra traffic in %d days on the %s' % (
     howmuch_extra_traffic_then, traffic_unit1, days_until_more_traffic, date_when_more_traffic))
