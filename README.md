@@ -12,7 +12,8 @@ Zeigt den aktuell verbleibenden Traffic an ohne lästige Installation einer App.
 Starte die Checker.py und folge den Anweisungen.
 Du musst dein [netzclub.net](https://www.netzclub.net/login/)  Passwort nicht zwingend eingeben, aber ohne dieses kann der bereits verbrauchte Traffic nicht angezeigt werden.
 Beim ersten Start musst du eine Bestätigungs-SMS eingeben.
-Du solltest das Script 2-3x pro Tag starten um zu gewährleisten, dass deine Session aktiv bleibt.
+Du solltest das Script 2-3x pro Tag starten um zu gewährleisten, dass deine Session aktiv bleibt.  
+Hierzu kann auch die automate.py hilfreich sein (siehe unten).  
 Wenn alles ohne Probleme funktioniert solltest du in etwa folgendes sehen:
 ```
 ***************************************************************************
@@ -23,6 +24,11 @@ Wenn alles ohne Probleme funktioniert solltest du in etwa folgendes sehen:
 [netzclub+] Last time active: 01-02-2020 13:55:48
 ***************************************************************************
 ```
+
+### Script automatisch in zufälligen Intervallen starten (automate.py)
+Die automate.py bleibt immer aktiv sobald einmal gestartet und führt das Script in zufälligen Intervallen aus.  
+Alle Ausgaben des Scripts werden in die 'status.log' geschrieben so lässt sich prüfen, ob die letzte Ausführung reibungslos ablief.  
+Wer keinen Cronjob/Windows Aufgabenplaner verwenden will kann die automate.py z.B. einfach beim Systemstart starten lassen.  
 
 ### FAQ
 **Kann ich die [netzclub+ App](https://play.google.com/store/apps/details?id=net.netzclub.plus) und dieses Script gleichzeitig verwenden?**  
