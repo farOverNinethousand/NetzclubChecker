@@ -13,12 +13,20 @@ CHECKER_PATH_ABS = os.path.join(DIR_PATH, CHECKER_PATH)
 LOG_PATH = "status.log"
 LOG_PATH_ABS = os.path.join(DIR_PATH, LOG_PATH)
 
+user_os = os.name
+if user_os == 'nt':
+	# Windows
+	python_sys_arg = 'python'
+else:
+	# All others
+	python_sys_arg = 'python3'
+
 while True: 
-	cmd = ['python3', CHECKER_PATH_ABS]
+	cmd = [python_sys_arg, CHECKER_PATH_ABS]
 
 	with open(LOG_PATH_ABS, "w") as f:
 		print("Start Login, see the log file {} for the program output".format(LOG_PATH_ABS))
-		subprocess.Popen(cmd,stdout=f).wait()
+		subprocess.Popen(cmd, stdout=f).wait()
 
 	waittime = random.randint(10, 36000)
 	print("Wait for {} seconds ({:.2f} hours)".format(waittime, waittime/60/60))
