@@ -1,3 +1,5 @@
+# Update 01.07.2020 - [Netzclub+ App eingestellt](https://www.teltarif.de/netzclub-plus-app-kostenlose-datenpakete-aenderungen/news/80899.html) --> Dieses Script hat leider nie wirklich funktioniert und spätestens jetzt ist es nutzlos. Laut Netzclub soll es in Zukunft jedoch weitere Möglichkeiten geben, an mehr gratis Datenvolumen zu kommen also immerhin ein Lichtblick. Dieses GitHub Projekt ist damit "gestorben" ;)
+
 # NetzclubChecker
 Script zum Prüfen von netzclub.net Accounts.
 Zeigt den aktuell verbleibenden Traffic an ohne lästige Installation einer App.
